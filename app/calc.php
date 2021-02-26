@@ -2,68 +2,86 @@
 // KONTROLER strony kalkulatora
 require_once dirname(__FILE__).'/../config.php';
 
-// W kontrolerze niczego nie wysyła się do klienta.
-// Wysłaniem odpowiedzi zajmie się odpowiedni widok.
-// Parametry do widoku przekazujemy przez zmienne.
+include _ROOT_PATH.'/app/security/check.php';
 
 // 1. pobranie parametrów
 
-$x = $_REQUEST ['x'];
-$y = $_REQUEST ['y'];
-$z = $_REQUEST ['z'];
+function getParams(&$amount,&$years,&$percentages){
+	$amount = isset($_REQUEST ['amount']) ? $_REQUEST['amount'] : null;
+	$years = isset($_REQUEST ['years']) ? $_REQUEST['years'] : null;
+	$percentages = isset($_REQUEST ['percentages']) ? $_REQUEST['percentages'] : null;
+}
+
 
 // 2. walidacja parametrów z przygotowaniem zmiennych dla widoku
 
-// sprawdzenie, czy parametry zostały przekazane
-if ( ! (isset($x) && isset($y) && isset($z))) {
-	//sytuacja wystąpi kiedy np. kontroler zostanie wywołany bezpośrednio - nie z formularza
-	$messages [] = 'Błędne wywołanie aplikacji. Brak jednego z parametrów.';
-}
 
-// sprawdzenie, czy potrzebne wartości zostały przekazane
-if ( $x == "") {
+function validate(&$amount,&$years,&$percentages,&$messages){
+	if ( ! (isset($amount) && isset($years) && isset($percentages))) {
+		return false;
+	}
+	
+
+if ( $amount == "") {
 	$messages [] = 'Nie podano kwoty';
 }
-if ( $y == "") {
+if ( $years == "") {
 	$messages [] = 'Nie podano liczby lat';
 }
-if ( $z == "") {
+if ( $percentages == "") {
 	$messages [] = 'Nie podano oprocentowania';
 }
 
-//nie ma sensu walidować dalej gdy brak parametrów
-if (empty( $messages )) {
+if (count( $messages ) != 0) return false; 
 	
-	// sprawdzenie, czy $x i $y są liczbami całkowitymi
-	if (! is_numeric( $x )) {
+	// sprawdzenie, czy są liczbami całkowitymi
+	if (! is_numeric( $amount )) {
 		$messages [] = 'Pierwsza wartość nie jest liczbą całkowitą';
 	}
 	
-	if (! is_numeric( $y )) {
+	if (! is_numeric( $years )) {
 		$messages [] = 'Druga wartość nie jest liczbą całkowitą';
 	}
 	
-	if (! is_numeric( $y )) {
+	if (! is_numeric( $years )) {
 		$messages [] = 'Trzecia wartość nie jest liczbą całkowitą';
-	}	
+	}
+	
+	if (count($messages) != 0) {
+		return false;
+	}else{
+		return true;
+	}
+
 
 }
 
 // 3. wykonaj zadanie jeśli wszystko w porządku
 
-if (empty ( $messages )) { // gdy brak błędów
+
+function process(&$amount,&$years,&$percentages,&$messages,&$result){
 	
-	
-	$x = intval($x);
-	$y = intval($y);
-	$z = floatval($z);
+	$amount = intval($amount);
+	$years = intval($years);
+	$percentages = floatval($percentages);
 	
 	//wykonanie operacji
-    $result = ($x/($y*12)) + ($x/($y*12) * ($z/100));
+    $result = ($amount/($years*12)) + ($amount/($years*12) * ($percentages/100));
 
 }
 
+$amoun = null;
+$years = null;
+$percentages = null;
+$result = null;
+$messages = array();
+
+getParams($amount,$years,$percentages);
+if(validate($amount,$years,$percentages,$messages)){
+	process($amount,$years,$percentages,$messages,$result);
+}
+
 // 4. Wywołanie widoku z przekazaniem zmiennych
-// - zainicjowane zmienne ($messages,$x,$y,$operation,$result)
+// - zainicjowane zmienne ($messages,$amount,$years,$operation,$result)
 //   będą dostępne w dołączonym skrypcie
 include 'calc_view.php';
